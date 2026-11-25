@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام ركاز - السوبر ماركت ونقطة البيع</title>
+  <style>
+    :root {
+      --navy: #0F2942;
+      --navy-2: #173B5E;
+      --gold: #D4AF37;
+      --gold-soft: #FBF5E3;
+      --bg: #F4F6F9;
+      --card: #FFFFFF;
+      --line: #DCE2EA;
+      --text: #102030;
+      --muted: #5C6B7C;
+      --ok: #15803D;
+      --warn: #B45309;
+      --bad: #B91C1C;
+      --info: #0369A1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Tahoma, Arial, sans-serif; }
+    body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; font-size: 14px; }
+
+    button:disabled, input:disabled, select:disabled {
+      opacity: 0.42;
+      cursor: not-allowed !important;
+      filter: grayscale(0.45);
+    }
+
+    .btn {
+      border: 1px solid transparent; border-radius: 7px; padding: 7px 12px;
+      font-weight: 600; font-size: 13px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-navy { background: var(--navy); color: #fff; }
+    .btn-gold { background: var(--gold); color: var(--navy); }
+    .btn-outline { background: #fff; color: var(--navy); border-color: var(--line); }
+    .btn-ok { background: var(--ok); color: #fff; }
+    .btn-bad { background: var(--bad); color: #fff; }
+    .btn-warn { background: var(--warn); color: #fff; }
+    .btn-info { background: var(--info); color: #fff; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; border-radius: 5px; }
+
+    .badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .b-ok { background: #DCFCE7; color: var(--ok); }
+    .b-bad { background: #FEE2E2; color: var(--bad); }
+    .b-warn { background: #FEF3C7; color: var(--warn); }
+    .b-navy { background: #E0E7FF; color: var(--navy); }
+
+    /* شاشة الدخول */
+    #loginScreen {
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, var(--navy) 0%, #091929 100%);
+      display: flex; align-items: center; justify-content: center; z-index: 900; padding: 16px;
+    }
+    .login-card {
+      width: 100%; max-width: 440px; background: var(--card); border-radius: 14px;
+      border-top: 5px solid var(--gold); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    }
+    .login-title { text-align: center; margin-bottom: 16px; }
+    .login-title h1 { color: var(--navy); font-size: 24px; }
+    .login-title p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .field { margin-bottom: 11px; }
+    .field label { display: block; font-weight: 600; font-size: 12px; color: var(--navy); margin-bottom: 4px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; font-size: 13px; background: #fff;
+    }
+
+    .entry-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 16px; }
+    .choice-box {
+      border: 2px solid var(--line); border-radius: 9px; padding: 12px 10px;
+      text-align: center; cursor: pointer; background: #FAFBFD;
+    }
+    .choice-box.active { border-color: var(--navy); background: var(--gold-soft); box-shadow: inset 0 0 0 1px var(--gold); }
+    .choice-box strong { display: block; color: var(--navy); font-size: 14px; }
+    .choice-box span { font-size: 11px; color: var(--muted); }
+
+    #appShell { display: none; height: 100vh; flex-direction: column; }
+    .top-bar {
+      height: 46px; background: var(--navy); color: #fff; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 14px; border-bottom: 2px solid var(--gold); flex-shrink: 0; gap: 10px;
+    }
+    .top-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: var(--gold); }
+    .top-meta { display: flex; align-items: center; gap: 14px; font-size: 12px; color: #E2E8F0; flex-wrap: wrap; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+
+    /* نقطة البيع العرضية */
+    #posView { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .pos-body {
+      flex: 1; display: grid; grid-template-columns: 380px 1fr 225px;
+      gap: 8px; padding: 8px; overflow: hidden; min-height: 0;
+    }
+
+    .pos-cart-col {
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+      display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+    }
+    .cart-customer-row {
+      padding: 8px; background: #F8FAFC; border-bottom: 1px solid var(--line); display: flex; gap: 6px;
+    }
+    .cart-customer-row select { flex: 1; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .cart-list { flex: 1; overflow-y: auto; padding: 6px; }
+    .cart-row { border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; margin-bottom: 6px; background: #fff; cursor: pointer; }
+    .cart-row.selected { border-color: var(--navy); background: var(--gold-soft); }
+    .cart-row-top { display: flex; justify-content: space-between; gap: 6px; font-weight: 700; font-size: 13px; }
+    .cart-row-sub { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 11px; color: var(--muted); gap: 6px; flex-wrap: wrap; }
+    .qty-mini { display: inline-flex; align-items: center; gap: 4px; }
+    .qty-mini button { width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--line); background: #F1F5F9; font-weight: 700; cursor: pointer; }
+
+    .cart-summary { border-top: 2px solid var(--line); background: #FAFBFD; padding: 8px 10px; }
+    .sum-line { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; color: var(--muted); }
+    .sum-total {
+      display: flex; justify-content: space-between; align-items: center; padding: 6px 8px;
+      margin: 6px 0; background: var(--navy); color: var(--gold); border-radius: 7px; font-size: 17px; font-weight: 800;
+    }
+    .cart-row-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 6px; }
+    .pay-big-btn { width: 100%; padding: 10px; font-size: 15px; font-weight: 800; background: var(--ok); color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+
+    .pos-center-col { display: flex; flex-direction: column; gap: 8px; overflow: hidden; min-height: 0; }
+    .center-tabs-bar {
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+      padding: 6px 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .center-tabs-bar input { flex: 1; min-width: 200px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; font-size: 13px; }
+    .center-main-area { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px; overflow-y: auto; min-height: 0; }
+
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 8px; }
+    .prod-card {
+      border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: #fff;
+      cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;
+    }
+    .prod-card:hover { border-color: var(--navy); background: #F8FAFC; }
+    .prod-thumb {
+      height: 50px; background: #F1F5F9; border-radius: 6px; display: flex;
+      align-items: center; justify-content: center; font-size: 11px; color: var(--muted); border: 1px dashed #CBD5E1;
+    }
+    .prod-name { font-weight: 700; font-size: 12px; line-height: 1.3; }
+    .prod-foot { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .prod-price { font-weight: 800; color: var(--navy); }
+    .prod-unit { font-size: 11px; color: var(--muted); }
+
+    .selected-item-box { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; flex-shrink: 0; }
+    .sel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .sel-title { font-weight: 800; color: var(--navy); font-size: 14px; }
+    .sel-metrics { display: flex; gap: 18px; font-size: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+    .promo-strip {
+      background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 7px; padding: 6px 8px;
+      margin-bottom: 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 11px;
+    }
+    .promo-cell { background: #fff; border: 1px solid #E0F2FE; border-radius: 5px; padding: 4px 6px; text-align: center; }
+    .promo-cell strong { display: block; color: var(--info); font-size: 13px; margin-top: 2px; }
+    .sel-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .pos-side-menu {
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+      padding: 8px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto;
+    }
+    .side-task-btn {
+      width: 100%; text-align: right; padding: 7px 9px; border-radius: 8px;
+      border: 1px solid var(--line); background: #F8FAFC; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .side-task-btn:hover:not(:disabled) { border-color: var(--navy); background: var(--gold-soft); }
+    .side-task-btn div strong { display: block; font-size: 12px; color: var(--navy); }
+    .side-task-btn div span { display: block; font-size: 10px; color: var(--muted); }
+    .task-tag { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; flex-shrink: 0; }
+
+    .shortcut-bar {
+      height: 30px; background: #E2E8F0; border-top: 1px solid var(--line);
+      display: flex; align-items: center; gap: 12px; padding: 0 12px; font-size: 11px; color: var(--navy); overflow-x: auto; flex-shrink: 0;
+    }
+    .shortcut-bar span strong { background: var(--navy); color: var(--gold); padding: 1px 5px; border-radius: 4px; margin-left: 3px; }
+
+    /* إدارة النظام */
+    #adminView { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .admin-layout { flex: 1; display: grid; grid-template-columns: 225px 1fr; overflow: hidden; min-height: 0; }
+    .admin-sidebar { background: var(--card); border-left: 1px solid var(--line); padding: 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+    .admin-nav-btn {
+      width: 100%; text-align: right; padding: 8px 11px; border-radius: 7px;
+      border: none; background: transparent; color: var(--text); font-weight: 600; font-size: 13px; cursor: pointer;
+    }
+    .admin-nav-btn.active { background: var(--navy); color: var(--gold); }
+    .admin-content { flex: 1; padding: 12px; overflow-y: auto; min-height: 0; }
+
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+    .panel-head h2 { font-size: 16px; color: var(--navy); }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .kpi-card { background: var(--card); border: 1px solid var(--line); border-right: 4px solid var(--gold); border-radius: 9px; padding: 10px 12px; }
+    .kpi-card span { font-size: 12px; color: var(--muted); display: block; }
+    .kpi-card strong { font-size: 18px; color: var(--navy); margin-top: 4px; display: block; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 7px 8px; text-align: right; }
+    th { background: #F1F5F9; color: var(--navy); font-weight: 700; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 41, 66, 0.55);
+      display: none; align-items: center; justify-content: center; z-index: 950; padding: 14px;
+    }
+    .modal-box {
+      background: var(--card); border-radius: 12px; border-top: 4px solid var(--gold);
+      width: 100%; max-width: 620px; max-height: 88vh; overflow-y: auto; padding: 16px;
+    }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+    .modal-head h3 { color: var(--navy); font-size: 16px; }
+
+    .perms-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 10px 0; }
+    .perm-item { display: flex; align-items: center; gap: 6px; font-size: 12px; background: #F8FAFC; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); }
+
+    @media print {
+      body { overflow: visible; height: auto; background: #fff; }
+      .top-bar, .pos-body, .admin-layout, .shortcut-bar, #loginScreen, .modal-backdrop { display: none !important; }
+      #printArea { display: block !important; padding: 12px; }
+    }
+    #printArea { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-title">
+        <h1>نظام ركاز</h1>
+        <p>تسجيل الدخول — اختر وجهة العمل بعد التحقق</p>
+      </div>
+      <div class="field"><label>اسم المستخدم</label><input id="loginUser" type="text" value="admin" /></div>
+      <div class="field"><label>كلمة المرور</label><input id="loginPass" type="password" value="1234" /></div>
+
+      <label style="display:block;font-size:12px;font-weight:700;color:var(--navy);margin-top:8px;">خيارات الدخول:</label>
+      <div class="entry-choice">
+        <div id="choicePos" class="choice-box active" onclick="selectEntryMode('POS')">
+          <strong>١. نقطة البيع</strong><span>شاشة الكاشير والمبيعات</span>
+        </div>
+        <div id="choiceAdmin" class="choice-box" onclick="selectEntryMode('ADMIN')">
+          <strong>٢. إدارة النظام</strong><span>المحاسبة والعروض والمخزون</span>
+        </div>
+      </div>
+
+      <button class="btn btn-navy" style="width:100%;padding:10px;font-size:14px;" onclick="handleLogin()">دخول إلى النظام</button>
+      <p id="loginMsg" style="color:var(--bad);font-size:12px;margin-top:8px;text-align:center;"></p>
+    </div>
+  </div>
+
+  <div id="appShell">
+    <header class="top-bar">
+      <div class="top-brand">
+        <span id="hdrCompanyName">نظام ركاز</span>
+        <span id="hdrModeBadge" class="badge" style="background:var(--gold);color:var(--navy);">نقطة البيع</span>
+      </div>
+      <div class="top-meta">
+        <span>المستخدم: <strong id="hdrUserName">-</strong> (<span id="hdrUserRole">-</span>)</span>
+        <span>الوردية: <strong id="hdrShiftInfo">غير مفتوحة</strong></span>
+        <span>مبيعات الوردية: <strong id="hdrShiftSales">0.00</strong> <span class="currLbl">ر.س</span></span>
+      </div>
+      <div class="top-actions">
+        <button id="btnSwitchToAdmin" class="btn btn-gold btn-sm" data-perm="pos_open_admin" onclick="switchView('ADMIN')">إدارة النظام</button>
+        <button id="btnSwitchToPos" class="btn btn-gold btn-sm" style="display:none;" data-perm="pos_access" onclick="switchView('POS')">نقطة البيع</button>
+        <button class="btn btn-outline btn-sm" onclick="logout()">خروج</button>
+      </div>
+    </header>
+
+    <!-- نقطة البيع -->
+    <section id="posView">
+      <div class="pos-body">
+        <div class="pos-cart-col">
+          <div class="cart-customer-row">
+            <select id="posCustomerSelect"></select>
+            <select id="posInvoiceType" style="width:92px;padding:6px;border:1px solid var(--line);border-radius:6px;font-size:12px;font-weight:700;">
+              <option value="SALE">بيع</option>
+              <option value="RETURN">مرتجع</option>
+            </select>
+          </div>
+
+          <div id="posCartList" class="cart-list"></div>
+
+          <div class="cart-summary">
+            <div class="sum-line"><span>الإجمالي قبل الخصم</span><strong id="sumSubtotal">0.00</strong></div>
+            <div class="sum-line"><span>إجمالي الخصومات</span><strong id="sumDiscount" style="color:var(--bad);">0.00</strong></div>
+            <div class="sum-line"><span>الخاضع للضريبة</span><strong id="sumTaxable">0.00</strong></div>
+            <div class="sum-line"><span>ضريبة القيمة المضافة (15%)</span><strong id="sumTax">0.00</strong></div>
+            <div class="sum-total">
+              <span>الإجمالي</span>
+              <span><span id="sumNet">0.00</span> <span class="currLbl" style="font-size:12px;">ر.س</span></span>
+            </div>
+
+            <div class="cart-row-btns">
+              <button class="btn btn-warn btn-sm" data-perm="pos_new_invoice" onclick="editSelectedQty()">الكمية</button>
+              <button class="btn btn-info btn-sm" data-perm="pos_discount" onclick="editSelectedPriceOrDisc()">السعر / خصم</button>
+              <button class="btn btn-bad btn-sm" data-perm="pos_new_invoice" onclick="deleteSelectedLine()">حذف</button>
+            </div>
+            <button class="pay-big-btn" data-perm="pos_new_invoice" onclick="openPaymentModal()">دفع (F10)</button>
+          </div>
+        </div>
+
+        <div class="pos-center-col">
+          <div class="center-tabs-bar">
+            <button id="tabBtnProducts" class="btn btn-navy btn-sm" onclick="setPosCenterTab('PRODUCTS')">المنتجات</button>
+            <button id="tabBtnInvoices" class="btn btn-outline btn-sm" onclick="setPosCenterTab('INVOICES')">الفواتير</button>
+            <input id="posSearchInput" type="text" placeholder="امسح الباركود أو باركود الميزان أو ابحث بالاسم ثم اضغط Enter (F1)" onkeydown="handlePosSearchKey(event)" />
+            <button class="btn btn-gold btn-sm" onclick="renderPosProducts()">بحث</button>
+          </div>
+
+          <div id="posCenterArea" class="center-main-area"></div>
+
+          <div class="selected-item-box">
+            <div class="sel-header">
+              <span id="selItemTitle" class="sel-title">اختر صنفاً من السلة أو المنتجات</span>
+              <span id="selPromoBadge" class="badge b-navy" style="display:none;">عرض نشط</span>
+            </div>
+            <div class="sel-metrics">
+              <span>السعر: <strong id="selItemPrice">0.00</strong></span>
+              <span>الكمية: <strong id="selItemQty">0</strong></span>
+              <span>الخصم: <strong id="selItemDisc">0.00</strong></span>
+              <span>الإجمالي: <strong id="selItemTotal">0.00</strong></span>
+            </div>
+            <div id="selPromoBox" class="promo-strip" style="display:none;">
+              <div class="promo-cell"><span>سعر العرض</span><strong id="prPrice">0.00</strong></div>
+              <div class="promo-cell"><span>الكمية المطلوبة</span><strong id="prReqQty">0</strong></div>
+              <div class="promo-cell"><span>الكمية الثانية</span><strong id="prSecQty">0</strong></div>
+              <div class="promo-cell"><span>الحد الأقصى للعميل</span><strong id="prMaxCust">0</strong></div>
+            </div>
+            <div class="sel-actions">
+              <button class="btn btn-bad btn-sm" onclick="deleteSelectedLine()">حذف</button>
+              <button class="btn btn-warn btn-sm" onclick="editSelectedQty()">الكمية</button>
+              <button class="btn btn-info btn-sm" data-perm="pos_discount" onclick="editSelectedPriceOrDisc()">السعر</button>
+              <button class="btn btn-outline btn-sm" onclick="togglePromoStrip()">عرض / إخفاء العرض</button>
+              <button class="btn btn-outline btn-sm" data-perm="pos_hold" onclick="holdCurrentInvoice()">تعليق</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="pos-side-menu">
+          <button class="side-task-btn" data-perm="pos_new_invoice" onclick="newInvoice()">
+            <div><strong>فاتورة جديدة</strong><span>بدء فاتورة بيع جديدة</span></div>
+            <span class="task-tag" style="background:var(--ok);">+</span>
+          </button>
+          <button class="side-task-btn" data-perm="pos_hold" onclick="openHeldInvoicesModal()">
+            <div><strong>الفواتير المعلقة</strong><span>عرض واسترجاع المعلّقة (<span id="heldCountLbl">0</span>)</span></div>
+            <span class="task-tag" style="background:var(--warn);">⏸</span>
+          </button>
+          <button class="side-task-btn" data-perm="pos_return" onclick="startReturnMode()">
+            <div><strong>مردود جديد</strong><span>إرجاع أصناف وخصم الصندوق</span></div>
+            <span class="task-tag" style="background:var(--bad);">↩</span>
+          </button>
+          <button class="side-task-btn" data-perm="pos_shift_close" onclick="openPaymentSummaryModal()">
+            <div><strong>إجماليات طرق الدفع</strong><span>ملخص مدفوعات الوردية</span></div>
+            <span class="task-tag" style="background:var(--info);">∑</span>
+          </button>
+          <button class="side-task-btn" data-perm="pos_shift_close" onclick="openShiftModal()">
+            <div><strong>إغلاق الجلسة</strong><span>فتح أو إغلاق الوردية والصندوق</span></div>
+            <span class="task-tag" style="background:var(--navy);">🔒</span>
+          </button>
+          <button class="side-task-btn" data-perm="pos_sync" onclick="syncAllData()">
+            <div><strong>مزامنة الفواتير</strong><span>تحديث البيانات مع الخادم</span></div>
+            <span class="task-tag" style="background:#0D9488;">↻</span>
+          </button>
+          <button class="side-task-btn" data-perm="pos_customer_screen" onclick="openCustomerDisplayWindow()">
+            <div><strong>عرض شاشة العميل</strong><span>نافذة مستقلة لملخص الفاتورة</span></div>
+            <span class="task-tag" style="background:#4F46E5;">🖥</span>
+          </button>
+          <button class="side-task-btn" data-perm="pos_shortcuts" onclick="openShortcutsModal()">
+            <div><strong>اختصارات لوحة المفاتيح</strong><span>عرض كافة اختصارات الكاشير</span></div>
+            <span class="task-tag" style="background:#475569;">⌨</span>
+          </button>
+          <button class="side-task-btn" data-perm="pos_open_admin" onclick="switchView('ADMIN')">
+            <div><strong>القائمة الرئيسية</strong><span>الانتقال إلى إدارة النظام</span></div>
+            <span class="task-tag" style="background:var(--gold);color:var(--navy);">←</span>
+          </button>
+        </aside>
+      </div>
+
+      <footer class="shortcut-bar">
+        <span><strong>F1</strong> بحث / ميزان</span>
+        <span><strong>F2</strong> فاتورة جديدة</span>
+        <span><strong>F4</strong> تعليق</span>
+        <span><strong>F8</strong> خصم عام</span>
+        <span><strong>F10</strong> دفع وإنهاء</span>
+        <span><strong>F11</strong> طباعة</span>
+        <span><strong>F12</strong> الوردية</span>
+      </footer>
+    </section>
+
+    <!-- إدارة النظام -->
+    <section id="adminView">
+      <div class="admin-layout">
+        <nav class="admin-sidebar">
+          <button class="admin-nav-btn active" data-sec="dashboard" onclick="openAdminSection('dashboard', this)">لوحة المعلومات</button>
+          <button class="admin-nav-btn" data-perm="promos_manage" data-sec="promotions" onclick="openAdminSection('promotions', this)">قائمة العروض الترويجية</button>
+          <button class="admin-nav-btn" data-perm="items_manage" data-sec="items" onclick="openAdminSection('items', this)">الأصناف والوحدات والمخزون</button>
+          <button class="admin-nav-btn" data-perm="stock_adjust" data-sec="wastage_count" onclick="openAdminSection('wastage_count', this)">الهالك والجرد الأعمى</button>
+          <button class="admin-nav-btn" data-perm="accounts_manage" data-sec="accounts" onclick="openAdminSection('accounts', this)">شجرة الحسابات والقيود</button>
+          <button class="admin-nav-btn" data-perm="vouchers_manage" data-sec="vouchers" onclick="openAdminSection('vouchers', this)">السندات المالية</button>
+          <button class="admin-nav-btn" data-perm="parties_manage" data-sec="parties" onclick="openAdminSection('parties', this)">العملاء والموردون وكشوفاتهم</button>
+          <button class="admin-nav-btn" data-perm="purchases_manage" data-sec="purchases" onclick="openAdminSection('purchases', this)">المشتريات والفواتير</button>
+          <button class="admin-nav-btn" data-perm="reports_view" data-sec="reports" onclick="openAdminSection('reports', this)">التقارير وتصدير Excel</button>
+          <button class="admin-nav-btn" data-perm="users_manage" data-sec="users" onclick="openAdminSection('users', this)">المستخدمون والصلاحيات</button>
+          <button class="admin-nav-btn" data-perm="fiscal_close" data-sec="periods" onclick="openAdminSection('periods', this)">إغلاق الفترات والرقابة</button>
+          <button class="admin-nav-btn" data-perm="backup_manage" data-sec="settings" onclick="openAdminSection('settings', this)">الإعدادات والنسخ الاحتياطي</button>
+        </nav>
+
+        <main id="adminContent" class="admin-content"></main>
+      </div>
+    </section>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modalTitle">نافذة</h3>
+        <button class="btn btn-outline btn-sm" onclick="closeModal()">إغلاق</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div id="printArea"></div>
+
+  <script>
+    const state = {
+      user: null,
+      entryMode: 'POS',
+      currentView: 'POS',
+      posCenterTab: 'PRODUCTS',
+      showPromoStrip: true,
+      settings: {},
+      items: [],
+      promotions: [],
+      parties: [],
+      accounts: [],
+      invoices: [],
+      vouchers: [],
+      journals: [],
+      wastageLogs: [],
+      heldInvoicesDb: [],
+      periods: [],
+      auditLogs: [],
+      users: [],
+      backups: [],
+      shift: null,
+      cart: [],
+      selectedCartIndex: 0,
+      globalDiscount: 0,
+      activePromoItemModalId: null
+    };
+
+    const PERM_LABELS = {
+      pos_access: 'دخول نقطة البيع',
+      pos_new_invoice: 'إنشاء فاتورة وتعديل السلة',
+      pos_discount: 'تطبيق خصم وتعديل سعر',
+      pos_return: 'تنفيذ مرتجع مبيعات',
+      pos_hold: 'تعليق واسترجاع الفواتير',
+      pos_shift_close: 'إدارة وإغلاق الوردية',
+      pos_sync: 'مزامنة البيانات',
+      pos_customer_screen: 'فتح شاشة العميل',
+      pos_shortcuts: 'عرض الاختصارات',
+      pos_open_admin: 'الانتقال إلى إدارة النظام',
+      admin_access: 'دخول إدارة النظام',
+      accounts_manage: 'شجرة الحسابات والقيود',
+      journal_create: 'إنشاء قيود يومية',
+      vouchers_manage: 'السندات المالية',
+      items_manage: 'الأصناف والوحدات والمخزون',
+      promos_manage: 'إدارة العروض الترويجية',
+      parties_manage: 'العملاء والموردون وكشوفاتهم',
+      purchases_manage: 'المشتريات والفواتير',
+      stock_adjust: 'الهالك والجرد الأعمى',
+      reports_view: 'التقارير وتصدير Excel',
+      fiscal_close: 'إغلاق الفترات والرقابة',
+      users_manage: 'المستخدمون وصلاحياتهم',
+      backup_manage: 'الإعدادات والنسخ الاحتياطي'
+    };
+
+    function hasPerm(permKey) {
+      if (!state.user) return false;
+      if (state.user.role === 'ADMIN') return true;
+      return Boolean(state.user.permissions && state.user.permissions[permKey]);
+    }
+
+    function applyPermissionsToDOM() {
+      document.querySelectorAll('[data-perm]').forEach(el => {
+        const key = el.getAttribute('data-perm');
+        const allowed = hasPerm(key);
+        el.disabled = !allowed;
+        el.title = allowed ? '' : 'غير مصرح لك بهذه المهمة — يرجى مراجعة المدير';
+      });
+    }
+
+    function selectEntryMode(mode) {
+      state.entryMode = mode;
+      document.getElementById('choicePos').classList.toggle('active', mode === 'POS');
+      document.getElementById('choiceAdmin').classList.toggle('active', mode === 'ADMIN');
+    }
+
+    async function handleLogin() {
+      const username = document.getElementById('loginUser').value.trim();
+      const password = document.getElementById('loginPass').value;
+      const msgEl = document.getElementById('loginMsg');
+      msgEl.textContent = '';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { msgEl.textContent = data.error || 'فشل تسجيل الدخول'; return; }
+        state.user = data;
+
+        const targetView = state.entryMode === 'ADMIN' && hasPerm('admin_access') ? 'ADMIN' : 'POS';
+        if (state.entryMode === 'ADMIN' && !hasPerm('admin_access')) {
+          alert('حسابك لا يملك صلاحية دخول إدارة النظام؛ سيتم توجيهك إلى نقطة البيع.');
+        }
+
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appShell').style.display = 'flex';
+        document.getElementById('hdrUserName').textContent = data.fullName;
+        document.getElementById('hdrUserRole').textContent = data.role;
+
+        await loadAllData();
+        switchView(targetView);
+        applyPermissionsToDOM();
+      } catch (err) { msgEl.textContent = 'تعذر الاتصال بالخادم'; }
+    }
+
+    function logout() {
+      state.user = null;
+      document.getElementById('appShell').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+    }
+
+    function switchView(view) {
+      if (view === 'ADMIN' && !hasPerm('pos_open_admin') && !hasPerm('admin_access')) {
+        return alert('غير مصرح لك بالانتقال إلى إدارة النظام.');
+      }
+      state.currentView = view;
+      const isPos = view === 'POS';
+      document.getElementById('posView').style.display = isPos ? 'flex' : 'none';
+      document.getElementById('adminView').style.display = isPos ? 'none' : 'flex';
+      document.getElementById('btnSwitchToAdmin').style.display = isPos ? 'inline-flex' : 'none';
+      document.getElementById('btnSwitchToPos').style.display = isPos ? 'none' : 'inline-flex';
+      document.getElementById('hdrModeBadge').textContent = isPos ? 'نقطة البيع' : 'إدارة النظام';
+
+      if (isPos) {
+        renderPosAll();
+        setTimeout(() => document.getElementById('posSearchInput')?.focus(), 80);
+      } else {
+        openAdminSection('dashboard', document.querySelector('.admin-nav-btn'));
+      }
+      applyPermissionsToDOM();
+    }
+
+    async function loadAllData() {
+      const [settings, items, promos, parties, accounts, invoices, vouchers, journals, wastageLogs, heldDb, periods, auditLogs, users, backups, shift] =
+        await Promise.all([
+          fetch('/api/settings').then(r => r.json()),
+          fetch('/api/items').then(r => r.json()),
+          fetch('/api/promotions').then(r => r.json()),
+          fetch('/api/parties').then(r => r.json()),
+          fetch('/api/accounts').then(r => r.json()),
+          fetch('/api/invoices').then(r => r.json()),
+          fetch('/api/vouchers').then(r => r.json()),
+          fetch('/api/journals').then(r => r.json()),
+          fetch('/api/wastage').then(r => r.json()),
+          fetch('/api/held-invoices').then(r => r.json()),
+          fetch('/api/fiscal-periods').then(r => r.json()),
+          fetch('/api/audit-logs').then(r => r.json()),
+          fetch('/api/users').then(r => r.json()),
+          fetch('/api/backups').then(r => r.json()),
+          fetch('/api/shifts/current').then(r => r.json())
+        ]);
+
+      state.settings = settings || {};
+      state.items = items || [];
+      state.promotions = promos || [];
+      state.parties = parties || [];
+      state.accounts = accounts || [];
+      state.invoices = invoices || [];
+      state.vouchers = vouchers || [];
+      state.journals = journals || [];
+      state.wastageLogs = wastageLogs || [];
+      state.heldInvoicesDb = heldDb || [];
+      state.periods = periods || [];
+      state.auditLogs = auditLogs || [];
+      state.users = users || [];
+      state.backups = backups || [];
+      state.shift = shift || null;
+
+      document.getElementById('hdrCompanyName').textContent = state.settings.company_name || 'نظام ركاز';
+      document.querySelectorAll('.currLbl').forEach(el => { el.textContent = state.settings.currency || 'ر.س'; });
+      updateShiftHeader();
+    }
+
+    async function syncAllData() {
+      await loadAllData();
+      if (state.currentView === 'POS') renderPosAll();
+      alert('تمت مزامنة البيانات بنجاح.');
+    }
+
+    function updateShiftHeader() {
+      const infoEl = document.getElementById('hdrShiftInfo');
+      const salesEl = document.getElementById('hdrShiftSales');
+      if (state.shift) {
+        infoEl.textContent = `#${state.shift.Id} (مفتوحة)`;
+        salesEl.textContent = Number(state.shift.CashSales + state.shift.CardSales).toFixed(2);
+      } else {
+        infoEl.textContent = 'غير مفتوحة';
+        salesEl.textContent = '0.00';
+      }
+    }
+
+    // تحليل باركود الميزان أو الباركودات الفرعية
+    function resolveScannedInput(rawVal) {
+      const val = (rawVal || '').trim();
+      if (!val) return null;
+
+      // 1) باركود مباشر أو وحدة فرعية
+      for (const it of state.items) {
+        if (it.Barcode === val) {
+          return { item: it, qty: 1, unitName: it.Unit, multiplier: 1, unitPrice: Number(it.SalePrice), barcode: it.Barcode };
+        }
+        const subU = (it.units || []).find(u => u.Barcode === val);
+        if (subU) {
+          return { item: it, qty: 1, unitName: subU.UnitName, multiplier: Number(subU.Multiplier || 1), unitPrice: Number(subU.SalePrice || it.SalePrice), barcode: subU.Barcode };
+        }
+      }
+
+      // 2) باركود الميزان (مثلاً يبدأ بـ 20 + 5 أرقام رمز ميزان + 5 أرقام وزن بالجرام)
+      const prefix = state.settings.scale_prefix || '20';
+      if (val.startsWith(prefix) && val.length >= prefix.length + 10) {
+        const rest = val.slice(prefix.length);
+        const scaleCode = rest.slice(0, 5);
+        const grams = Number(rest.slice(5, 10));
+        const scaleItem = state.items.find(i => i.ScaleCode === scaleCode);
+        if (scaleItem && grams > 0) {
+          const kgQty = Number((grams / 1000).toFixed(3));
+          return { item: scaleItem, qty: kgQty, unitName: scaleItem.Unit, multiplier: 1, unitPrice: Number(scaleItem.SalePrice), barcode: scaleItem.Barcode };
+        }
+      }
+
+      return null;
+    }
+
+    function getActivePromoForItem(itemId, qty = 1) {
+      const today = new Date().toISOString().slice(0, 10);
+      const activePromos = state.promotions
+        .filter(p => p.IsActive === 1 && (!p.StartDate || p.StartDate <= today) && (!p.EndDate || p.EndDate >= today))
+        .sort((a, b) => Number(b.Priority) - Number(a.Priority));
+
+      for (const p of activePromos) {
+        const match = (p.items || []).find(pi => Number(pi.ItemId) === Number(itemId));
+        if (match && Number(qty) >= Number(match.RequiredQty || 1)) {
+          return { promo: p, rule: match };
+        }
+      }
+      return null;
+    }
+
+    function renderPosAll() {
+      const selCust = document.getElementById('posCustomerSelect');
+      const customers = state.parties.filter(p => p.Type === 'CUSTOMER');
+      selCust.innerHTML = customers.map(c => `<option value="${c.Id}">${c.Name}</option>`).join('');
+      if (!selCust.value && customers[0]) selCust.value = customers[0].Id;
+
+      if (state.posCenterTab === 'PRODUCTS') renderPosProducts();
+      else renderPosInvoicesTab();
+
+      renderCart();
+      renderSelectedItemCard();
+      document.getElementById('heldCountLbl').textContent = state.heldInvoicesDb.length;
+      applyPermissionsToDOM();
+    }
+
+    function setPosCenterTab(tab) {
+      state.posCenterTab = tab;
+      document.getElementById('tabBtnProducts').className = tab === 'PRODUCTS' ? 'btn btn-navy btn-sm' : 'btn btn-outline btn-sm';
+      document.getElementById('tabBtnInvoices').className = tab === 'INVOICES' ? 'btn btn-navy btn-sm' : 'btn btn-outline btn-sm';
+      if (tab === 'PRODUCTS') renderPosProducts();
+      else renderPosInvoicesTab();
+    }
+
+    function renderPosProducts() {
+      const q = (document.getElementById('posSearchInput')?.value || '').trim().toLowerCase();
+      const filtered = state.items.filter(it =>
+        !q || it.Name.toLowerCase().includes(q) || it.Barcode.toLowerCase().includes(q) || (it.ScaleCode || '').toLowerCase().includes(q)
+      );
+
+      const area = document.getElementById('posCenterArea');
+      area.innerHTML = `<div class="products-grid">${
+        filtered.map(it => {
+          const promo = getActivePromoForItem(it.Id, 1);
+          const displayPrice = promo ? Number(promo.rule.PromoPriceInclTax) : Number(it.SalePrice);
+          return `
+            <div class="prod-card" onclick="addItemToCart(${it.Id})">
+              <div class="prod-thumb">${promo ? '<span class="badge b-warn">عرض ترويجي</span>' : 'لا توجد صورة'}</div>
+              <div class="prod-name">${it.Name}</div>
+              <div class="prod-foot">
+                <span class="prod-unit">${it.Unit}</span>
+                <span class="prod-price">${displayPrice.toFixed(2)}</span>
+              </div>
+            </div>
+          `;
+        }).join('')
+      }</div>`;
+    }
+
+    function renderPosInvoicesTab() {
+      const area = document.getElementById('posCenterArea');
+      area.innerHTML = `
+        <table>
+          <thead><tr><th>رقم الفاتورة</th><th>النوع</th><th>العميل</th><th>الصافي</th><th>الدفع</th><th>الوقت</th></tr></thead>
+          <tbody>
+            ${state.invoices.slice(0, 30).map(inv => `
+              <tr>
+                <td><strong>${inv.InvoiceNumber}</strong></td>
+                <td><span class="badge ${inv.Type === 'RETURN' ? 'b-bad' : 'b-ok'}">${inv.Type === 'RETURN' ? 'مرتجع' : inv.Type === 'PURCHASE' ? 'شراء' : 'مبيعات'}</span></td>
+                <td>${inv.PartyName}</td>
+                <td><strong>${Number(inv.NetTotal).toFixed(2)}</strong></td>
+                <td>${inv.PaymentMethod}</td>
+                <td>${(inv.CreatedAt || '').slice(0, 16)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function handlePosSearchKey(e) {
+      if (e.key === 'Enter') {
+        const raw = e.target.value.trim();
+        if (!raw) return;
+        const resolved = resolveScannedInput(raw);
+        if (resolved) {
+          addResolvedToCart(resolved);
+          e.target.value = '';
+        } else {
+          renderPosProducts();
+        }
+      }
+    }
+
+    function addItemToCart(itemId) {
+      const it = state.items.find(i => Number(i.Id) === Number(itemId));
+      if (!it) return;
+      addResolvedToCart({ item: it, qty: 1, unitName: it.Unit, multiplier: 1, unitPrice: Number(it.SalePrice), barcode: it.Barcode });
+    }
+
+    function addResolvedToCart(resObj) {
+      if (!hasPerm('pos_new_invoice')) return alert('غير مصرح لك بإضافة أصناف للفاتورة.');
+      const { item, qty, unitName, multiplier, unitPrice, barcode } = resObj;
+      const idx = state.cart.findIndex(c => Number(c.itemId) === Number(item.Id) && c.unit === unitName);
+      if (idx >= 0) {
+        state.cart[idx].qty = Number((state.cart[idx].qty + qty).toFixed(3));
+        state.selectedCartIndex = idx;
+      } else {
+        state.cart.push({
+          itemId: item.Id, barcode, name: item.Name, unit: unitName,
+          multiplier, qty, basePrice: unitPrice, unitPrice, discount: 0
+        });
+        state.selectedCartIndex = state.cart.length - 1;
+      }
+      recalcCartPromotions();
+      renderCart();
+      renderSelectedItemCard();
+    }
+
+    function recalcCartPromotions() {
+      state.cart.forEach(line => {
+        const promo = getActivePromoForItem(line.itemId, line.qty);
+        if (promo && Number(line.multiplier || 1) === 1) {
+          const promoPrice = Number(promo.rule.PromoPriceInclTax);
+          line.unitPrice = promoPrice;
+          line.discount = Math.max(0, Number(((line.basePrice - promoPrice) * line.qty).toFixed(2)));
+          line.promoInfo = promo;
+        } else {
+          line.unitPrice = line.basePrice;
+          line.discount = 0;
+          line.promoInfo = null;
+        }
+      });
+    }
+
+    function changeLineQty(idx, delta) {
+      if (!hasPerm('pos_new_invoice')) return;
+      const line = state.cart[idx];
+      if (!line) return;
+      const nextQty = Number((Number(line.qty) + delta).toFixed(3));
+      if (nextQty <= 0) {
+        state.cart.splice(idx, 1);
+        state.selectedCartIndex = Math.max(0, state.cart.length - 1);
+      } else {
+        line.qty = nextQty;
+        state.selectedCartIndex = idx;
+      }
+      recalcCartPromotions();
+      renderCart();
+      renderSelectedItemCard();
+    }
+
+    function deleteSelectedLine() {
+      if (!hasPerm('pos_new_invoice') || !state.cart.length) return;
+      state.cart.splice(state.selectedCartIndex, 1);
+      state.selectedCartIndex = Math.max(0, state.cart.length - 1);
+      renderCart();
+      renderSelectedItemCard();
+    }
+
+    function editSelectedQty() {
+      if (!hasPerm('pos_new_invoice')) return;
+      const line = state.cart[state.selectedCartIndex];
+      if (!line) return;
+      const val = prompt('أدخل الكمية الجديدة:', line.qty);
+      if (val === null) return;
+      const q = Number(val);
+      if (!q || q <= 0) return alert('الكمية غير صحيحة');
+      line.qty = q;
+      recalcCartPromotions();
+      renderCart();
+      renderSelectedItemCard();
+    }
+
+    function editSelectedPriceOrDisc() {
+      if (!hasPerm('pos_discount')) return alert('غير مصرح لك بتعديل السعر أو الخصم.');
+      const line = state.cart[state.selectedCartIndex];
+      if (!line) return;
+      const val = prompt('أدخل مبلغ الخصم الإجمالي لهذا السطر:', line.discount);
+      if (val === null) return;
+      const d = Number(val);
+      const maxLine = line.qty * line.unitPrice;
+      const maxPct = Number(state.user?.maxDiscountPercent || 0);
+      if (state.user?.role !== 'ADMIN' && (d / Math.max(1, maxLine)) * 100 > maxPct) {
+        return alert(`الخصم يتجاوز الحد المسموح لك (${maxPct}%)`);
+      }
+      line.discount = Math.max(0, Math.min(maxLine, d));
+      renderCart();
+      renderSelectedItemCard();
+    }
+
+    function togglePromoStrip() {
+      state.showPromoStrip = !state.showPromoStrip;
+      renderSelectedItemCard();
+    }
+
+    function getCartTotals() {
+      let subtotal = 0, lineDisc = 0;
+      state.cart.forEach(l => {
+        subtotal += Number(l.qty) * Number(l.unitPrice);
+        lineDisc += Number(l.discount || 0);
+      });
+      const totalDiscount = Number((lineDisc + Number(state.globalDiscount || 0)).toFixed(2));
+      const net = Math.max(0, Number((subtotal - totalDiscount).toFixed(2)));
+      const taxable = Number((net / 1.15).toFixed(2));
+      const tax = Number((net - taxable).toFixed(2));
+      return { subtotal, totalDiscount, taxable, tax, net };
+    }
+
+    function renderCart() {
+      const listEl = document.getElementById('posCartList');
+      if (!state.cart.length) {
+        listEl.innerHTML = `<div style="text-align:center;color:var(--muted);padding:30px 10px;font-size:12px;">السلة فارغة — اختر صنفاً أو امسح الباركود</div>`;
+      } else {
+        listEl.innerHTML = state.cart.map((l, idx) => {
+          const lineTotal = Math.max(0, Number((l.qty * l.unitPrice - l.discount).toFixed(2)));
+          return `
+            <div class="cart-row ${idx === state.selectedCartIndex ? 'selected' : ''}" onclick="state.selectedCartIndex=${idx};renderCart();renderSelectedItemCard();">
+              <div class="cart-row-top"><span>${l.name}</span><span>${lineTotal.toFixed(2)}</span></div>
+              <div class="cart-row-sub">
+                <span>${l.unit} | سعر: ${Number(l.unitPrice).toFixed(2)} ${l.discount > 0 ? `| خصم: ${Number(l.discount).toFixed(2)}` : ''}</span>
+                <div class="qty-mini" onclick="event.stopPropagation();">
+                  <button onclick="changeLineQty(${idx}, -1)">-</button>
+                  <strong>${l.qty}</strong>
+                  <button onclick="changeLineQty(${idx}, 1)">+</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      const t = getCartTotals();
+      document.getElementById('sumSubtotal').textContent = t.subtotal.toFixed(2);
+      document.getElementById('sumDiscount').textContent = t.totalDiscount.toFixed(2);
+      document.getElementById('sumTaxable').textContent = t.taxable.toFixed(2);
+      document.getElementById('sumTax').textContent = t.tax.toFixed(2);
+      document.getElementById('sumNet').textContent = t.net.toFixed(2);
+    }
+
+    function renderSelectedItemCard() {
+      const line = state.cart[state.selectedCartIndex];
+      const promoBox = document.getElementById('selPromoBox');
+      const promoBadge = document.getElementById('selPromoBadge');
+      if (!line) {
+        document.getElementById('selItemTitle').textContent = 'اختر صنفاً من السلة أو المنتجات';
+        document.getElementById('selItemPrice').textContent = '0.00';
+        document.getElementById('selItemQty').textContent = '0';
+        document.getElementById('selItemDisc').textContent = '0.00';
+        document.getElementById('selItemTotal').textContent = '0.00';
+        promoBox.style.display = 'none';
+        promoBadge.style.display = 'none';
+        return;
+      }
+      const total = Math.max(0, Number((line.qty * line.unitPrice - line.discount).toFixed(2)));
+      document.getElementById('selItemTitle').textContent = line.name;
+      document.getElementById('selItemPrice').textContent = Number(line.unitPrice).toFixed(2);
+      document.getElementById('selItemQty').textContent = line.qty;
+      document.getElementById('selItemDisc').textContent = Number(line.discount).toFixed(2);
+      document.getElementById('selItemTotal').textContent = total.toFixed(2);
+
+      const promo = line.promoInfo || getActivePromoForItem(line.itemId, 1);
+      if (promo && state.showPromoStrip) {
+        promoBox.style.display = 'grid';
+        promoBadge.style.display = 'inline-block';
+        promoBadge.textContent = promo.promo.Name;
+        document.getElementById('prPrice').textContent = Number(promo.rule.PromoPriceInclTax).toFixed(2);
+        document.getElementById('prReqQty').textContent = promo.rule.RequiredQty;
+        document.getElementById('prSecQty').textContent = promo.rule.SecondQty;
+        document.getElementById('prMaxCust').textContent = promo.rule.MaxPerCustomer || 'غير محدود';
+      } else {
+        promoBox.style.display = 'none';
+        promoBadge.style.display = promo ? 'inline-block' : 'none';
+      }
+    }
+
+    function newInvoice() {
+      if (!hasPerm('pos_new_invoice')) return;
+      state.cart = [];
+      state.globalDiscount = 0;
+      state.selectedCartIndex = 0;
+      document.getElementById('posInvoiceType').value = 'SALE';
+      renderCart();
+      renderSelectedItemCard();
+      document.getElementById('posSearchInput')?.focus();
+    }
+
+    async function holdCurrentInvoice() {
+      if (!hasPerm('pos_hold')) return alert('غير مصرح بتعليق الفواتير');
+      if (!state.cart.length) return alert('السلة فارغة');
+      const selCust = document.getElementById('posCustomerSelect');
+      await fetch('/api/held-invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partyId: Number(selCust.value || 1),
+          partyName: selCust.options[selCust.selectedIndex]?.text || 'عميل نقدي عام',
+          globalDiscount: state.globalDiscount,
+          items: state.cart
+        })
+      });
+      await loadAllData();
+      newInvoice();
+      document.getElementById('heldCountLbl').textContent = state.heldInvoicesDb.length;
+      alert('تم حفظ الفاتورة المعلقة في قاعدة البيانات.');
+    }
+
+    function openHeldInvoicesModal() {
+      if (!hasPerm('pos_hold')) return alert('غير مصرح بعرض الفواتير المعلقة');
+      openModal('الفواتير المعلقة (قاعدة البيانات)', `
+        ${!state.heldInvoicesDb.length ? '<p>لا توجد فواتير معلقة.</p>' : state.heldInvoicesDb.map((h, i) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid var(--line);border-radius:7px;margin-bottom:6px;">
+            <div><strong>فاتورة معلقة #${h.Id}</strong> — <small>${(h.CreatedAt || '').slice(0, 16)}</small> (${(h.items || []).length} أصناف)</div>
+            <div style="display:flex;gap:4px;">
+              <button class="btn btn-navy btn-sm" onclick="recallHeldDb(${i})">استرجاع</button>
+              <button class="btn btn-bad btn-sm" onclick="deleteHeldDb(${h.Id})">حذف</button>
+            </div>
+          </div>
+        `).join('')}
+      `);
+    }
+
+    async function recallHeldDb(idx) {
+      const h = state.heldInvoicesDb[idx];
+      if (!h) return;
+      state.cart = h.items || [];
+      state.globalDiscount = Number(h.GlobalDiscount || 0);
+      state.selectedCartIndex = 0;
+      await fetch(`/api/held-invoices/${h.Id}`, { method: 'DELETE' });
+      await loadAllData();
+      closeModal();
+      renderPosAll();
+    }
+
+    async function deleteHeldDb(id) {
+      await fetch(`/api/held-invoices/${id}`, { method: 'DELETE' });
+      await loadAllData();
+      openHeldInvoicesModal();
+      document.getElementById('heldCountLbl').textContent = state.heldInvoicesDb.length;
+    }
+
+    function startReturnMode() {
+      if (!hasPerm('pos_return')) return alert('غير مصرح بتنفيذ المرتجعات');
+      document.getElementById('posInvoiceType').value = 'RETURN';
+      alert('تم تفعيل وضع مرتجع المبيعات؛ أضف الأصناف المرتجعة ثم اضغط دفع.');
+    }
+
+    function openPaymentModal() {
+      if (!hasPerm('pos_new_invoice') || !state.cart.length) return;
+      const t = getCartTotals();
+      openModal('إتمام الدفع وإنهاء الفاتورة', `
+        <div style="background:#F8FAFC;padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;">
+          <span>المطلوب سداده:</span>
+          <strong style="font-size:18px;color:var(--navy);">${t.net.toFixed(2)} ${state.settings.currency || 'ر.س'}</strong>
+        </div>
+        <div class="field">
+          <label>طريقة الدفع</label>
+          <select id="payMethodSel" onchange="togglePayInputs(${t.net})">
+            <option value="CASH">نقدي (كاش)</option>
+            <option value="CARD">شبكة / بطاقة</option>
+            <option value="CREDIT">آجل</option>
+            <option value="MIXED">مركب (نقدي + شبكة)</option>
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>المستلم نقداً</label><input id="payCashInp" type="number" step="0.01" value="${t.net.toFixed(2)}" oninput="calcChange(${t.net})" /></div>
+          <div class="field"><label>المستلم شبكة</label><input id="payCardInp" type="number" step="0.01" value="0.00" oninput="calcChange(${t.net})" /></div>
+        </div>
+        <div style="background:var(--gold-soft);padding:10px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;">
+          <strong>الباقي للزبون:</strong>
+          <strong id="payChangeLbl" style="font-size:18px;color:var(--ok);">0.00</strong>
+        </div>
+        <button class="btn btn-ok" style="width:100%;padding:10px;" onclick="submitInvoice(${t.net})">تأكيد وحفظ الفاتورة</button>
+      `);
+      togglePayInputs(t.net);
+    }
+
+    function togglePayInputs(net) {
+      const m = document.getElementById('payMethodSel').value;
+      const c = document.getElementById('payCashInp');
+      const k = document.getElementById('payCardInp');
+      if (m === 'CASH') { c.value = net.toFixed(2); k.value = '0.00'; }
+      else if (m === 'CARD') { c.value = '0.00'; k.value = net.toFixed(2); }
+      else if (m === 'CREDIT') { c.value = '0.00'; k.value = '0.00'; }
+      calcChange(net);
+    }
+
+    function calcChange(net) {
+      const c = Number(document.getElementById('payCashInp')?.value || 0);
+      const k = Number(document.getElementById('payCardInp')?.value || 0);
+      const el = document.getElementById('payChangeLbl');
+      if (el) el.textContent = Math.max(0, c + k - net).toFixed(2);
+    }
+
+    async function submitInvoice(net) {
+      const custSel = document.getElementById('posCustomerSelect');
+      const type = document.getElementById('posInvoiceType').value;
+      const paymentMethod = document.getElementById('payMethodSel').value;
+      const paidCash = Number(document.getElementById('payCashInp').value || 0);
+      const paidCard = Number(document.getElementById('payCardInp').value || 0);
+
+      if (paymentMethod !== 'CREDIT' && paidCash + paidCard + 0.001 < net) {
+        return alert('المبلغ المدفوع أقل من صافي الفاتورة.');
+      }
+
+      const res = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type, paymentMethod,
+          partyId: Number(custSel.value || 1),
+          partyName: custSel.options[custSel.selectedIndex]?.text || 'عميل نقدي عام',
+          shiftId: state.shift?.Id || null,
+          userId: state.user?.id || 1,
+          userRole: state.user?.role || 'CASHIER',
+          maxDiscountPercent: state.user?.maxDiscountPercent || 0,
+          discountTotal: state.globalDiscount,
+          paidCash, paidCard, items: state.cart
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || 'خطأ في حفظ الفاتورة');
+
+      printReceipt({
+        invoiceNumber: data.invoiceNumber,
+        partyName: custSel.options[custSel.selectedIndex]?.text || 'عميل نقدي عام',
+        items: [...state.cart],
+        netTotal: net,
+        changeAmount: data.changeAmount || 0
+      });
+
+      closeModal();
+      newInvoice();
+      await loadAllData();
+      renderPosAll();
+    }
+
+    function printReceipt(inv) {
+      const area = document.getElementById('printArea');
+      area.innerHTML = `
+        <div style="max-width:300px;margin:auto;font-family:Tahoma,Arial;font-size:12px;">
+          <h3 style="text-align:center;">${state.settings.company_name || 'نظام ركاز'}</h3>
+          <p style="text-align:center;">فاتورة رقم: ${inv.invoiceNumber}</p>
+          <p>العميل: ${inv.partyName}</p>
+          <hr style="margin:6px 0;" />
+          ${inv.items.map(i => `<div style="display:flex;justify-content:space-between;"><span>${i.name} × ${i.qty}</span><span>${Number(i.qty * i.unitPrice - i.discount).toFixed(2)}</span></div>`).join('')}
+          <hr style="margin:6px 0;" />
+          <div style="display:flex;justify-content:space-between;font-weight:bold;"><span>الإجمالي:</span><span>${Number(inv.netTotal).toFixed(2)}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>الباقي:</span><span>${Number(inv.changeAmount).toFixed(2)}</span></div>
+          <p style="text-align:center;margin-top:10px;">${state.settings.receipt_footer || 'شكراً لتسوقكم معنا'}</p>
+        </div>
+      `;
+      window.print();
+    }
+
+    function openPaymentSummaryModal() {
+      if (!hasPerm('pos_shift_close')) return alert('غير مصرح');
+      const s = state.shift;
+      if (!s) return alert('لا توجد وردية مفتوحة.');
+      openModal('إجماليات طرق الدفع للوردية الحالية', `
+        <p>مبيعات نقدية: <strong>${Number(s.CashSales).toFixed(2)}</strong></p>
+        <p style="margin-top:6px;">مبيعات شبكة: <strong>${Number(s.CardSales).toFixed(2)}</strong></p>
+        <p style="margin-top:6px;">المرتجعات: <strong>${Number(s.ReturnsTotal).toFixed(2)}</strong></p>
+        <p style="margin-top:6px;">الرصيد المتوقع بالصندوق: <strong>${Number(s.ExpectedBalance).toFixed(2)}</strong></p>
+      `);
+    }
+
+    function openShiftModal() {
+      if (!hasPerm('pos_shift_close')) return alert('غير مصرح');
+      if (!state.shift) {
+        openModal('فتح وردية جديدة', `
+          <div class="field"><label>الرصيد الافتتاحي للصندوق</label><input id="openShiftBal" type="number" step="0.01" value="0.00" /></div>
+          <button class="btn btn-ok" style="width:100%;" onclick="openShiftApi()">فتح الوردية</button>
+        `);
+      } else {
+        openModal('إغلاق الوردية ومطابقة الصندوق', `
+          <p>الرصيد المتوقع بالنظام: <strong>${Number(state.shift.ExpectedBalance).toFixed(2)}</strong></p>
+          <div class="field" style="margin-top:10px;"><label>الجرد الفعلي للصندوق</label><input id="closeShiftActual" type="number" step="0.01" value="${Number(state.shift.ExpectedBalance).toFixed(2)}" /></div>
+          <div class="field"><label>ملاحظات</label><input id="closeShiftNotes" type="text" /></div>
+          <button class="btn btn-bad" style="width:100%;" onclick="closeShiftApi(${state.shift.Id})">اعتماد إغلاق الوردية</button>
+        `);
+      }
+    }
+
+    async function openShiftApi() {
+      const bal = Number(document.getElementById('openShiftBal').value || 0);
+      const res = await fetch('/api/shifts/open', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: state.user.id, cashierName: state.user.fullName, openingBalance: bal })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+      state.shift = data;
+      updateShiftHeader();
+      closeModal();
+      alert('تم فتح الوردية.');
+    }
+
+    async function closeShiftApi(shiftId) {
+      const actual = Number(document.getElementById('closeShiftActual').value || 0);
+      const notes = document.getElementById('closeShiftNotes').value || '';
+      const res = await fetch(`/api/shifts/${shiftId}/close`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actualBalance: actual, notes, actorId: state.user.id })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+      state.shift = null;
+      updateShiftHeader();
+      closeModal();
+      alert(`تم إغلاق الوردية. الفرق: ${Number(data.variance).toFixed(2)}`);
+    }
+
+    function openCustomerDisplayWindow() {
+      if (!hasPerm('pos_customer_screen')) return alert('غير مصرح');
+      const t = getCartTotals();
+      const w = window.open('', 'CustomerDisplay', 'width=600,height=450');
+      w.document.write(`<html dir="rtl"><body style="font-family:Tahoma;background:#0F2942;color:#fff;padding:24px;text-align:center;">
+        <h1 style="color:#D4AF37;">${state.settings.company_name || 'نظام ركاز'}</h1>
+        <h2>المطلوب: ${t.net.toFixed(2)} ${state.settings.currency || 'ر.س'}</h2>
+      </body></html>`);
+    }
+
+    function openShortcutsModal() {
+      openModal('اختصارات لوحة المفاتيح', `
+        <table>
+          <tr><th>المفتاح</th><th>الوظيفة</th></tr>
+          <tr><td><strong>F1</strong></td><td>التركيز على حقل البحث / الباركود / باركود الميزان</td></tr>
+          <tr><td><strong>F2</strong></td><td>بدء فاتورة جديدة</td></tr>
+          <tr><td><strong>F4</strong></td><td>تعليق الفاتورة الحالية</td></tr>
+          <tr><td><strong>F8</strong></td><td>تطبيق خصم عام على الفاتورة</td></tr>
+          <tr><td><strong>F10</strong></td><td>فتح نافذة الدفع وإنهاء الفاتورة</td></tr>
+          <tr><td><strong>F11</strong></td><td>طباعة الفاتورة الحالية</td></tr>
+          <tr><td><strong>F12</strong></td><td>فتح نافذة الوردية</td></tr>
+        </table>
+      `);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (state.currentView !== 'POS' || !state.user) return;
+      if (e.key === 'F1') { e.preventDefault(); document.getElementById('posSearchInput')?.focus(); }
+      else if (e.key === 'F2') { e.preventDefault(); newInvoice(); }
+      else if (e.key === 'F4') { e.preventDefault(); holdCurrentInvoice(); }
+      else if (e.key === 'F8') {
+        e.preventDefault();
+        if (!hasPerm('pos_discount')) return alert('غير مصرح بالخصم');
+        const d = prompt('أدخل الخصم العام للفاتورة:', state.globalDiscount);
+        if (d !== null) { state.globalDiscount = Math.max(0, Number(d || 0)); renderCart(); }
+      }
+      else if (e.key === 'F10') { e.preventDefault(); openPaymentModal(); }
+      else if (e.key === 'F11') {
+        e.preventDefault();
+        const t = getCartTotals();
+        if (state.cart.length) printReceipt({ invoiceNumber: 'PREVIEW', partyName: 'عميل', items: state.cart, netTotal: t.net, changeAmount: 0 });
+      }
+      else if (e.key === 'F12') { e.preventDefault(); openShiftModal(); }
+    });
+
+    // أقسام إدارة النظام
+    async function openAdminSection(sec, btnEl) {
+      document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      const main = document.getElementById('adminContent');
+      await loadAllData();
+
+      if (sec === 'dashboard') {
+        const rep = await fetch('/api/reports/summary').then(r => r.json());
+        main.innerHTML = `
+          <div class="kpi-grid">
+            <div class="kpi-card"><span>إجمالي المبيعات</span><strong>${Number(rep.totalSales || 0).toFixed(2)}</strong></div>
+            <div class="kpi-card"><span>إجمالي المشتريات</span><strong>${Number(rep.totalPurchases || 0).toFixed(2)}</strong></div>
+            <div class="kpi-card"><span>إجمالي الهالك والتالف</span><strong style="color:var(--bad);">${Number(rep.totalWastage || 0).toFixed(2)}</strong></div>
+            <div class="kpi-card"><span>قيمة المخزون بالتكلفة</span><strong>${Number(rep.stockValueCost || 0).toFixed(2)}</strong></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel">
+              <div class="panel-head"><h2>أصناف قريبة الانتهاء (${(rep.expiringItems || []).length})</h2></div>
+              <table>
+                <thead><tr><th>الصنف</th><th>تاريخ الانتهاء</th><th>الرصيد</th></tr></thead>
+                <tbody>${(rep.expiringItems || []).map(i => `<tr><td>${i.Name}</td><td><span class="badge b-warn">${i.ExpiryDate}</span></td><td>${i.StockQty}</td></tr>`).join('') || '<tr><td colspan="3">لا توجد تنبيهات صلاحية</td></tr>'}</tbody>
+              </table>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>أصناف منخفضة المخزون (${(rep.lowStockItems || []).length})</h2></div>
+              <table>
+                <thead><tr><th>الصنف</th><th>الرصيد</th><th>الحد الأدنى</th></tr></thead>
+                <tbody>${(rep.lowStockItems || []).map(i => `<tr><td>${i.Name}</td><td><span class="badge b-bad">${i.StockQty}</span></td><td>${i.MinStock}</td></tr>`).join('') || '<tr><td colspan="3">لا توجد نواقص</td></tr>'}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } else if (sec === 'promotions') renderPromotionsSection(main);
+      else if (sec === 'items') renderItemsSection(main);
+      else if (sec === 'wastage_count') renderWastageAndBlindCountSection(main);
+      else if (sec === 'accounts') renderAccountsSection(main);
+      else if (sec === 'vouchers') renderVouchersSection(main);
+      else if (sec === 'parties') renderPartiesSection(main);
+      else if (sec === 'purchases') renderPurchasesSection(main);
+      else if (sec === 'reports') renderReportsSection(main);
+      else if (sec === 'users') renderUsersSection(main);
+      else if (sec === 'periods') renderPeriodsAndAuditSection(main);
+      else if (sec === 'settings') renderSettingsSection(main);
+
+      applyPermissionsToDOM();
+    }
+
+    function renderPromotionsSection(main) {
+      const canM = hasPerm('promos_manage');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head">
+            <h2>قائمة العروض الترويجية</h2>
+            <button class="btn btn-navy btn-sm" ${!canM ? 'disabled' : ''} onclick="openCreatePromoModal()">+ عرض جديد</button>
+          </div>
+          <table>
+            <thead><tr><th>العرض / الأولوية</th><th>الشرط</th><th>الصلاحية</th><th>الحالة</th><th>الأصناف</th><th>الإجراءات</th></tr></thead>
+            <tbody>
+              ${state.promotions.map(p => {
+                const active = Number(p.IsActive) === 1;
+                return `
+                  <tr>
+                    <td><strong>${p.Name}</strong> <span class="badge b-navy">أولوية ${p.Priority}</span></td>
+                    <td>${p.ConditionType === 'SUM_QTY' ? 'مجموع كميات أصناف' : 'قائمة أصناف حسب الكمية'}</td>
+                    <td>من: ${p.StartDate || '--'}<br/>إلى: ${p.EndDate || '--'}</td>
+                    <td><span class="badge ${active ? 'b-ok' : 'b-bad'}">${active ? 'نشط' : 'غير نشط'}</span></td>
+                    <td>${(p.items || []).length}</td>
+                    <td style="display:flex;gap:4px;flex-wrap:wrap;">
+                      <button class="btn btn-sm ${active ? 'btn-bad' : 'btn-ok'}" ${!canM ? 'disabled' : ''} onclick="togglePromoActive(${p.Id}, ${active ? 0 : 1})">${active ? 'إيقاف' : 'تفعيل'}</button>
+                      <button class="btn btn-outline btn-sm" ${!canM ? 'disabled' : ''} onclick="openEditPromoModal(${p.Id})">تعديل</button>
+                      <button class="btn btn-gold btn-sm" ${!canM ? 'disabled' : ''} onclick="openPromoItemsModal(${p.Id})">أصناف العرض</button>
+                      <button class="btn btn-bad btn-sm" ${!canM ? 'disabled' : ''} onclick="deletePromo(${p.Id})">حذف</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function openCreatePromoModal() {
+      openModal('إنشاء عرض ترويجي جديد', `
+        <div class="field"><label>اسم العرض</label><input id="npName" type="text" /></div>
+        <div class="grid-2">
+          <div class="field"><label>الأولوية</label><input id="npPriority" type="number" value="1" /></div>
+          <div class="field"><label>الشرط</label><select id="npCond"><option value="ITEM_QTY">قائمة أصناف حسب الكمية</option><option value="SUM_QTY">مجموع كميات أصناف</option></select></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>من تاريخ</label><input id="npStart" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
+          <div class="field"><label>إلى تاريخ</label><input id="npEnd" type="date" /></div>
+        </div>
+        <button class="btn btn-navy" style="width:100%;" onclick="saveNewPromo()">حفظ العرض</button>
+      `);
+    }
+
+    async function saveNewPromo() {
+      await fetch('/api/promotions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('npName').value.trim(),
+          priority: Number(document.getElementById('npPriority').value || 1),
+          conditionType: document.getElementById('npCond').value,
+          startDate: document.getElementById('npStart').value,
+          endDate: document.getElementById('npEnd').value || null,
+          isActive: 1, actorId: state.user.id
+        })
+      });
+      closeModal();
+      openAdminSection('promotions');
+    }
+
+    async function togglePromoActive(id, nextActive) {
+      await fetch(`/api/promotions/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: nextActive, actorId: state.user.id })
+      });
+      openAdminSection('promotions');
+    }
+
+    function openEditPromoModal(id) {
+      const p = state.promotions.find(x => Number(x.Id) === Number(id));
+      if (!p) return;
+      openModal('تعديل العرض', `
+        <div class="field"><label>اسم العرض</label><input id="epName" type="text" value="${p.Name}" /></div>
+        <div class="grid-2">
+          <div class="field"><label>الأولوية</label><input id="epPriority" type="number" value="${p.Priority}" /></div>
+          <div class="field"><label>الشرط</label><select id="epCond"><option value="ITEM_QTY" ${p.ConditionType==='ITEM_QTY'?'selected':''}>قائمة أصناف حسب الكمية</option><option value="SUM_QTY" ${p.ConditionType==='SUM_QTY'?'selected':''}>مجموع كميات أصناف</option></select></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>من تاريخ</label><input id="epStart" type="date" value="${p.StartDate || ''}" /></div>
+          <div class="field"><label>إلى تاريخ</label><input id="epEnd" type="date" value="${p.EndDate || ''}" /></div>
+        </div>
+        <button class="btn btn-navy" style="width:100%;" onclick="saveEditPromo(${id})">حفظ</button>
+      `);
+    }
+
+    async function saveEditPromo(id) {
+      await fetch(`/api/promotions/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('epName').value.trim(),
+          priority: Number(document.getElementById('epPriority').value || 1),
+          conditionType: document.getElementById('epCond').value,
+          startDate: document.getElementById('epStart').value,
+          endDate: document.getElementById('epEnd').value || null,
+          actorId: state.user.id
+        })
+      });
+      closeModal();
+      openAdminSection('promotions');
+    }
+
+    async function deletePromo(id) {
+      if (!confirm('حذف العرض؟')) return;
+      await fetch(`/api/promotions/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ actorId: state.user.id }) });
+      openAdminSection('promotions');
+    }
+
+    function openPromoItemsModal(promoId) {
+      state.activePromoItemModalId = promoId;
+      const p = state.promotions.find(x => Number(x.Id) === Number(promoId));
+      if (!p) return;
+      openModal(`أصناف العرض: ${p.Name}`, `
+        <div class="grid-3">
+          <div class="field"><label>الصنف</label><select id="piItemSel">${state.items.map(i => `<option value="${i.Id}">${i.Name} (${i.Barcode})</option>`).join('')}</select></div>
+          <div class="field"><label>سعر العرض شامل الضريبة</label><input id="piPriceIncl" type="number" step="0.01" /></div>
+          <div class="field"><label>الكمية المطلوبة</label><input id="piReqQty" type="number" value="1" /></div>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label>الكمية الثانية</label><input id="piSecQty" type="number" value="0" /></div>
+          <div class="field"><label>الحد الأقصى للعميل</label><input id="piMaxCust" type="number" value="0" /></div>
+          <div class="field" style="display:flex;align-items:flex-end;"><button class="btn btn-ok" style="width:100%;" onclick="addPromoItem(${promoId})">+ إضافة</button></div>
+        </div>
+        <table style="margin-top:10px;">
+          <thead><tr><th>الصنف</th><th>غير شامل</th><th>شامل</th><th>الكمية</th><th>حذف</th></tr></thead>
+          <tbody>
+            ${(p.items || []).map(pi => `
+              <tr>
+                <td>${pi.ItemName}<br/><small>${pi.Barcode}</small></td>
+                <td>${Number(pi.PromoPriceExclTax).toFixed(2)}</td>
+                <td><strong>${Number(pi.PromoPriceInclTax).toFixed(2)}</strong></td>
+                <td>${pi.RequiredQty}</td>
+                <td><button class="btn btn-bad btn-sm" onclick="removePromoItem(${pi.Id})">حذف</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `);
+    }
+
+    async function addPromoItem(promoId) {
+      await fetch(`/api/promotions/${promoId}/items`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itemId: Number(document.getElementById('piItemSel').value),
+          promoPriceInclTax: Number(document.getElementById('piPriceIncl').value || 0),
+          requiredQty: Number(document.getElementById('piReqQty').value || 1),
+          secondQty: Number(document.getElementById('piSecQty').value || 0),
+          maxPerCustomer: Number(document.getElementById('piMaxCust').value || 0),
+          actorId: state.user.id
+        })
+      });
+      await loadAllData();
+      openPromoItemsModal(promoId);
+    }
+
+    async function removePromoItem(id) {
+      await fetch(`/api/promotion-items/${id}`, { method: 'DELETE' });
+      await loadAllData();
+      openPromoItemsModal(state.activePromoItemModalId);
+    }
+
+    // الأصناف والوحدات الفرعية
+    function renderItemsSection(main) {
+      const canM = hasPerm('items_manage');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>إضافة صنف جديد (سوبر ماركت)</h2></div>
+          <div class="grid-3">
+            <div class="field"><label>الباركود</label><input id="itBar" type="text" /></div>
+            <div class="field"><label>كود الميزان (اختياري)</label><input id="itScale" type="text" placeholder="مثال: 00102" /></div>
+            <div class="field"><label>اسم الصنف</label><input id="itName" type="text" /></div>
+          </div>
+          <div class="grid-3">
+            <div class="field"><label>الوحدة الأساسية</label><input id="itUnit" type="text" value="حبة" /></div>
+            <div class="field"><label>سعر التكلفة</label><input id="itCost" type="number" step="0.01" value="0" /></div>
+            <div class="field"><label>سعر البيع</label><input id="itPrice" type="number" step="0.01" value="0" /></div>
+          </div>
+          <div class="grid-3">
+            <div class="field"><label>الكمية الافتتاحية</label><input id="itQty" type="number" step="0.01" value="0" /></div>
+            <div class="field"><label>الحد الأدنى</label><input id="itMin" type="number" value="5" /></div>
+            <div class="field"><label>تاريخ الصلاحية</label><input id="itExp" type="date" /></div>
+          </div>
+          <button class="btn btn-navy" ${!canM ? 'disabled' : ''} onclick="createItemApi()">حفظ الصنف</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>دليل الأصناف والوحدات</h2></div>
+          <table>
+            <thead><tr><th>الباركود / ميزان</th><th>الصنف</th><th>الوحدة</th><th>التكلفة</th><th>البيع</th><th>الرصيد</th><th>الصلاحية</th><th>وحدة فرعية</th></tr></thead>
+            <tbody>
+              ${state.items.map(i => `
+                <tr>
+                  <td>${i.Barcode}${i.ScaleCode ? `<br/><small>ميزان: ${i.ScaleCode}</small>` : ''}</td>
+                  <td><strong>${i.Name}</strong></td>
+                  <td>${i.Unit} (${(i.units || []).length} فرعية)</td>
+                  <td>${Number(i.CostPrice).toFixed(2)}</td>
+                  <td>${Number(i.SalePrice).toFixed(2)}</td>
+                  <td><strong>${i.StockQty}</strong></td>
+                  <td>${i.ExpiryDate || '--'}</td>
+                  <td><button class="btn btn-outline btn-sm" ${!canM ? 'disabled' : ''} onclick="openAddUnitModal(${i.Id}, '${i.Name}')">+ وحدة</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function createItemApi() {
+      const res = await fetch('/api/items', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          barcode: document.getElementById('itBar').value.trim(),
+          scaleCode: document.getElementById('itScale').value.trim() || null,
+          name: document.getElementById('itName').value.trim(),
+          unit: document.getElementById('itUnit').value.trim() || 'حبة',
+          costPrice: Number(document.getElementById('itCost').value || 0),
+          salePrice: Number(document.getElementById('itPrice').value || 0),
+          stockQty: Number(document.getElementById('itQty').value || 0),
+          minStock: Number(document.getElementById('itMin').value || 5),
+          expiryDate: document.getElementById('itExp').value || null,
+          actorId: state.user.id
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+      openAdminSection('items');
+    }
+
+    function openAddUnitModal(itemId, itemName) {
+      openModal(`إضافة وحدة فرعية للصنف: ${itemName}`, `
+        <div class="field"><label>اسم الوحدة (مثل: كرتون / شد / حبة)</label><input id="uName" type="text" /></div>
+        <div class="field"><label>باركود الوحدة</label><input id="uBar" type="text" /></div>
+        <div class="grid-2">
+          <div class="field"><label>معامل التحويل (بالوحدة الأساسية)</label><input id="uMult" type="number" step="0.0001" value="1" /></div>
+          <div class="field"><label>سعر بيع الوحدة</label><input id="uPrice" type="number" step="0.01" value="0" /></div>
+        </div>
+        <button class="btn btn-navy" style="width:100%;" onclick="saveUnitApi(${itemId})">حفظ الوحدة</button>
+      `);
+    }
+
+    async function saveUnitApi(itemId) {
+      const res = await fetch(`/api/items/${itemId}/units`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          unitName: document.getElementById('uName').value.trim(),
+          barcode: document.getElementById('uBar').value.trim(),
+          multiplier: Number(document.getElementById('uMult').value || 1),
+          salePrice: Number(document.getElementById('uPrice').value || 0),
+          actorId: state.user.id
+        })
+      });
+      if (!res.ok) return alert('تعذر حفظ الوحدة');
+      closeModal();
+      openAdminSection('items');
+    }
+
+    // الهالك والجرد الأعمى
+    function renderWastageAndBlindCountSection(main) {
+      const canA = hasPerm('stock_adjust');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>تسجيل هالك وتالف يومي</h2></div>
+          <div class="grid-3">
+            <div class="field"><label>الصنف</label><select id="wsItem">${state.items.map(i => `<option value="${i.Id}">${i.Name} (رصيد: ${i.StockQty})</option>`).join('')}</select></div>
+            <div class="field"><label>الكمية التالفة</label><input id="wsQty" type="number" step="0.01" value="1" /></div>
+            <div class="field"><label>السبب</label><input id="wsReason" type="text" value="منتهي الصلاحية / تالف" /></div>
+          </div>
+          <button class="btn btn-bad btn-sm" ${!canA ? 'disabled' : ''} onclick="saveWastageApi()">اعتماد وترحيل الهالك</button>
+          <table style="margin-top:10px;">
+            <thead><tr><th>الصنف</th><th>الكمية</th><th>التكلفة</th><th>السبب</th><th>التاريخ</th></tr></thead>
+            <tbody>${state.wastageLogs.slice(0, 20).map(w => `<tr><td>${w.ItemName}</td><td>${w.Qty}</td><td>${Number(w.TotalCost).toFixed(2)}</td><td>${w.Reason}</td><td>${(w.CreatedAt || '').slice(0, 16)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>الجرد الأعمى (إدخال الكمية الفعلية دون إظهار الرصيد الدفتري)</h2>
+            <button class="btn btn-ok btn-sm" ${!canA ? 'disabled' : ''} onclick="submitBlindCount()">اعتماد وترحيل الجرد</button>
+          </div>
+          <div class="field"><label>ملاحظات الجرد</label><input id="bcNotes" type="text" placeholder="مثال: جرد قسم الألبان..." /></div>
+          <table>
+            <thead><tr><th>الباركود</th><th>الصنف</th><th>الكمية الفعلية</th></tr></thead>
+            <tbody>
+              ${state.items.map(i => `
+                <tr>
+                  <td>${i.Barcode}</td>
+                  <td><strong>${i.Name}</strong></td>
+                  <td style="width:140px;"><input type="number" step="0.01" class="bc-input" data-item-id="${i.Id}" placeholder="أدخل الفعلي" style="width:100%;padding:5px;border:1px solid var(--line);border-radius:5px;" /></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function saveWastageApi() {
+      const res = await fetch('/api/wastage', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itemId: Number(document.getElementById('wsItem').value),
+          qty: Number(document.getElementById('wsQty').value || 0),
+          reason: document.getElementById('wsReason').value.trim(),
+          userId: state.user.id
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+      openAdminSection('wastage_count');
+    }
+
+    async function submitBlindCount() {
+      const counts = [];
+      document.querySelectorAll('.bc-input').forEach(inp => {
+        if (inp.value !== '') {
+          counts.push({ itemId: Number(inp.getAttribute('data-item-id')), actualQty: Number(inp.value) });
+        }
+      });
+      if (!counts.length) return alert('أدخل كمية فعلية لصنف واحد على الأقل.');
+      const res = await fetch('/api/stock-count', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ counts, notes: document.getElementById('bcNotes').value.trim(), actorId: state.user.id })
+      });
+      if (!res.ok) return alert('خطأ في ترحيل الجرد');
+      alert('تم اعتماد الجرد وترحيل الفروقات محاسبياً.');
+      openAdminSection('wastage_count');
+    }
+
+    // الحسابات والقيود والسندات والعملاء والموردون والمشتريات والتقارير
+    function renderAccountsSection(main) {
+      const canJ = hasPerm('journal_create');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>قيد يومية جديد</h2></div>
+          <div class="grid-3">
+            <div class="field"><label>مدين</label><select id="jrnDebit">${state.accounts.filter(a=>!a.IsGroup).map(a=>`<option value="${a.Code}">${a.Code} - ${a.Name}</option>`).join('')}</select></div>
+            <div class="field"><label>دائن</label><select id="jrnCredit">${state.accounts.filter(a=>!a.IsGroup).map(a=>`<option value="${a.Code}">${a.Code} - ${a.Name}</option>`).join('')}</select></div>
+            <div class="field"><label>المبلغ</label><input id="jrnAmt" type="number" step="0.01" /></div>
+          </div>
+          <div class="field"><label>البيان</label><input id="jrnDesc" type="text" /></div>
+          <button class="btn btn-navy" ${!canJ ? 'disabled' : ''} onclick="createJournalApi()">ترحيل القيد</button>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>شجرة الحسابات</h2></div>
+          <table>
+            <thead><tr><th>الرقم</th><th>الحساب</th><th>النوع</th><th>الرصيد</th></tr></thead>
+            <tbody>${state.accounts.map(a => `<tr style="${a.IsGroup ? 'background:#F8FAFC;font-weight:700;' : ''}"><td>${a.Code}</td><td>${a.Name}</td><td>${a.Type}</td><td>${Number(a.Balance).toFixed(2)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function createJournalApi() {
+      const res = await fetch('/api/journals', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          debitAccount: document.getElementById('jrnDebit').value,
+          creditAccount: document.getElementById('jrnCredit').value,
+          amount: Number(document.getElementById('jrnAmt').value || 0),
+          description: document.getElementById('jrnDesc').value.trim(),
+          actorId: state.user.id
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+      openAdminSection('accounts');
+    }
+
+    function renderVouchersSection(main) {
+      const canV = hasPerm('vouchers_manage');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>سند قبض / صرف</h2></div>
+          <div class="grid-3">
+            <div class="field"><label>النوع</label><select id="vcType"><option value="RECEIPT">سند قبض</option><option value="PAYMENT">سند صرف</option></select></div>
+            <div class="field"><label>الصندوق / البنك</label><select id="vcAcc"><option value="1101">1101 - الصندوق الرئيسي</option><option value="1102">1102 - البنك / الشبكة</option></select></div>
+            <div class="field"><label>الطرف (عميل / مورد)</label><select id="vcParty"><option value="">بدون طرف محدد</option>${state.parties.map(p=>`<option value="${p.Id}">${p.Name}</option>`).join('')}</select></div>
+          </div>
+          <div class="grid-3">
+            <div class="field"><label>الحساب المقابل</label><select id="vcCounter">${state.accounts.filter(a=>!a.IsGroup).map(a=>`<option value="${a.Code}">${a.Code} - ${a.Name}</option>`).join('')}</select></div>
+            <div class="field"><label>المبلغ</label><input id="vcAmt" type="number" step="0.01" /></div>
+            <div class="field"><label>البيان</label><input id="vcDesc" type="text" /></div>
+          </div>
+          <button class="btn btn-navy" ${!canV ? 'disabled' : ''} onclick="createVoucherApi()">اعتماد السند</button>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>رقم السند</th><th>النوع</th><th>المبلغ</th><th>البيان</th></tr></thead>
+            <tbody>${state.vouchers.map(v => `<tr><td>${v.VoucherNumber}</td><td>${v.Type === 'RECEIPT' ? 'قبض' : 'صرف'}</td><td>${Number(v.Amount).toFixed(2)}</td><td>${v.Description || ''}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function createVoucherApi() {
+      const res = await fetch('/api/vouchers', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: document.getElementById('vcType').value,
+          accountCode: document.getElementById('vcAcc').value,
+          partyId: document.getElementById('vcParty').value ? Number(document.getElementById('vcParty').value) : null,
+          counterAccountCode: document.getElementById('vcCounter').value,
+          amount: Number(document.getElementById('vcAmt').value || 0),
+          description: document.getElementById('vcDesc').value.trim(),
+          actorId: state.user.id
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+      openAdminSection('vouchers');
+    }
+
+    function renderPartiesSection(main) {
+      const canP = hasPerm('parties_manage');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>إضافة عميل / مورد</h2></div>
+          <div class="grid-3">
+            <div class="field"><label>الاسم</label><input id="ptName" type="text" /></div>
+            <div class="field"><label>النوع</label><select id="ptType"><option value="CUSTOMER">عميل</option><option value="SUPPLIER">مورد</option></select></div>
+            <div class="field"><label>الرصيد الافتتاحي</label><input id="ptBal" type="number" step="0.01" value="0" /></div>
+          </div>
+          <button class="btn btn-navy" ${!canP ? 'disabled' : ''} onclick="createPartyApi()">حفظ</button>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>العملاء والموردون وكشوفات الحساب</h2></div>
+          <table>
+            <thead><tr><th>الاسم</th><th>النوع</th><th>الرصيد الحالي</th><th>كشف الحساب</th></tr></thead>
+            <tbody>
+              ${state.parties.map(p => `
+                <tr>
+                  <td><strong>${p.Name}</strong></td>
+                  <td>${p.Type === 'SUPPLIER' ? 'مورد' : 'عميل'}</td>
+                  <td>${Number(p.Balance).toFixed(2)}</td>
+                  <td><button class="btn btn-outline btn-sm" onclick="openPartyStatement(${p.Id})">كشف حساب</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function createPartyApi() {
+      await fetch('/api/parties', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('ptName').value.trim(),
+          type: document.getElementById('ptType').value,
+          openingBalance: Number(document.getElementById('ptBal').value || 0),
+          actorId: state.user.id
+        })
+      });
+      openAdminSection('parties');
+    }
+
+    async function openPartyStatement(partyId) {
+      const data = await fetch(`/api/parties/${partyId}/statement`).then(r => r.json());
+      openModal(`كشف حساب: ${data.party.Name}`, `
+        <p style="margin-bottom:8px;">الرصيد الافتتاحي: <strong>${Number(data.openingBalance).toFixed(2)}</strong> | الرصيد الختامي: <strong>${Number(data.closingBalance).toFixed(2)}</strong></p>
+        <table>
+          <thead><tr><th>التاريخ</th><th>المرجع</th><th>البيان</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead>
+          <tbody>
+            ${(data.rows || []).map(r => `<tr><td>${(r.date || '').slice(0,10)}</td><td>${r.ref}</td><td>${r.desc}</td><td>${r.debit.toFixed(2)}</td><td>${r.credit.toFixed(2)}</td><td><strong>${r.balance.toFixed(2)}</strong></td></tr>`).join('')}
+          </tbody>
+        </table>
+      `);
+    }
+
+    function renderPurchasesSection(main) {
+      const canPur = hasPerm('purchases_manage');
+      const suppliers = state.parties.filter(p => p.Type === 'SUPPLIER');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>فاتورة مشتريات سريعة (تحديث المخزون ومتوسط التكلفة)</h2></div>
+          <div class="grid-3">
+            <div class="field"><label>المورد</label><select id="purSup">${suppliers.map(s=>`<option value="${s.Id}">${s.Name}</option>`).join('') || '<option value="1">مورد نقدي</option>'}</select></div>
+            <div class="field"><label>الصنف</label><select id="purItem">${state.items.map(i=>`<option value="${i.Id}">${i.Name}</option>`).join('')}</select></div>
+            <div class="field"><label>طريقة الدفع</label><select id="purPay"><option value="CASH">نقدي</option><option value="CREDIT">آجل</option></select></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>الكمية المشتراة</label><input id="purQty" type="number" step="0.01" value="10" /></div>
+            <div class="field"><label>سعر الشراء للوحدة</label><input id="purCost" type="number" step="0.01" value="5" /></div>
+          </div>
+          <button class="btn btn-navy" ${!canPur ? 'disabled' : ''} onclick="submitQuickPurchase()">ترحيل فاتورة المشتريات</button>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>الرقم</th><th>النوع</th><th>الطرف</th><th>الصافي</th><th>الدفع</th></tr></thead>
+            <tbody>${state.invoices.map(inv => `<tr><td>${inv.InvoiceNumber}</td><td>${inv.Type}</td><td>${inv.PartyName}</td><td>${Number(inv.NetTotal).toFixed(2)}</td><td>${inv.PaymentMethod}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function submitQuickPurchase() {
+      const it = state.items.find(i => Number(i.Id) === Number(document.getElementById('purItem').value));
+      const supSel = document.getElementById('purSup');
+      const qty = Number(document.getElementById('purQty').value || 0);
+      const cost = Number(document.getElementById('purCost').value || 0);
+      if (!it || qty <= 0) return alert('بيانات الشراء غير صحيحة');
+
+      const res = await fetch('/api/invoices', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'PURCHASE',
+          paymentMethod: document.getElementById('purPay').value,
+          partyId: Number(supSel.value || 1),
+          partyName: supSel.options[supSel.selectedIndex]?.text || 'مورد',
+          userId: state.user.id,
+          userRole: state.user.role,
+          items: [{ itemId: it.Id, barcode: it.Barcode, name: it.Name, unit: it.Unit, multiplier: 1, qty, unitPrice: cost, unitCost: cost, discount: 0 }]
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+      openAdminSection('purchases');
+    }
+
+    function renderReportsSection(main) {
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head">
+            <h2>ميزان المراجعة والحسابات</h2>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-gold btn-sm" onclick="exportAccountsCsv()">تصدير CSV / Excel</button>
+              <button class="btn btn-outline btn-sm" onclick="window.print()">طباعة</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>الرقم</th><th>الحساب</th><th>النوع</th><th>الرصيد</th></tr></thead>
+            <tbody>${state.accounts.map(a => `<tr><td>${a.Code}</td><td>${a.Name}</td><td>${a.Type}</td><td>${Number(a.Balance).toFixed(2)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function exportAccountsCsv() {
+      const rows = [['Code', 'Name', 'Type', 'Balance'], ...state.accounts.map(a => [a.Code, a.Name, a.Type, a.Balance])];
+      const csv = '\uFEFF' + rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'rkaz_accounts.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderUsersSection(main) {
+      const canU = hasPerm('users_manage');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>المستخدمون وصلاحيات المهام (الأدمن يحدد الصلاحيات؛ غير المصرّح يظهر معطلاً)</h2></div>
+          <table>
+            <thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الدور</th><th>سقف الخصم %</th><th>تعديل الصلاحيات</th></tr></thead>
+            <tbody>
+              ${state.users.map(u => `
+                <tr>
+                  <td><strong>${u.FullName}</strong></td>
+                  <td>${u.Username}</td>
+                  <td><span class="badge b-navy">${u.Role}</span></td>
+                  <td>${u.MaxDiscountPercent}%</td>
+                  <td><button class="btn btn-gold btn-sm" ${!canU ? 'disabled' : ''} onclick="openEditUserPerms(${u.Id})">تحديد المهام</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function openEditUserPerms(userId) {
+      const u = state.users.find(x => Number(x.Id) === Number(userId));
+      if (!u) return;
+      const perms = u.permissions || {};
+      openModal(`صلاحيات المستخدم: ${u.FullName}`, `
+        <div class="grid-2">
+          <div class="field"><label>الدور</label><select id="euRole"><option value="ADMIN" ${u.Role==='ADMIN'?'selected':''}>ADMIN</option><option value="CASHIER" ${u.Role==='CASHIER'?'selected':''}>CASHIER</option></select></div>
+          <div class="field"><label>أقصى نسبة خصم %</label><input id="euDisc" type="number" value="${u.MaxDiscountPercent}" /></div>
+        </div>
+        <div class="perms-grid">
+          ${Object.entries(PERM_LABELS).map(([k, lbl]) => `
+            <label class="perm-item"><input type="checkbox" id="perm_${k}" ${perms[k] ? 'checked' : ''} /><span>${lbl}</span></label>
+          `).join('')}
+        </div>
+        <button class="btn btn-navy" style="width:100%;margin-top:8px;" onclick="saveUserPerms(${userId})">حفظ الصلاحيات</button>
+      `);
+    }
+
+    async function saveUserPerms(userId) {
+      const perms = {};
+      Object.keys(PERM_LABELS).forEach(k => { perms[k] = Boolean(document.getElementById(`perm_${k}`)?.checked); });
+      await fetch(`/api/users/${userId}/permissions`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: document.getElementById('euRole').value,
+          maxDiscountPercent: Number(document.getElementById('euDisc').value || 0),
+          permissions: perms, actorId: state.user.id
+        })
+      });
+      closeModal();
+      openAdminSection('users');
+    }
+
+    function renderPeriodsAndAuditSection(main) {
+      const canF = hasPerm('fiscal_close');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>إغلاق الفترات المحاسبية</h2></div>
+          <div class="grid-3">
+            <div class="field"><label>اسم الفترة</label><input id="fpName" type="text" placeholder="2026-11" /></div>
+            <div class="field"><label>من تاريخ</label><input id="fpStart" type="date" /></div>
+            <div class="field"><label>إلى تاريخ</label><input id="fpEnd" type="date" /></div>
+          </div>
+          <button class="btn btn-navy btn-sm" ${!canF ? 'disabled' : ''} onclick="createPeriodApi()">+ إضافة فترة</button>
+          <table style="margin-top:10px;">
+            <thead><tr><th>الفترة</th><th>من</th><th>إلى</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody>
+              ${state.periods.map(p => `
+                <tr>
+                  <td>${p.PeriodName}</td><td>${p.StartDate}</td><td>${p.EndDate}</td>
+                  <td><span class="badge ${p.IsLocked ? 'b-bad' : 'b-ok'}">${p.IsLocked ? 'مقفلة' : 'مفتوحة'}</span></td>
+                  <td><button class="btn btn-warn btn-sm" ${!canF ? 'disabled' : ''} onclick="togglePeriodApi(${p.Id})">${p.IsLocked ? 'فتح' : 'قفل'}</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>سجل الرقابة (Audit Log)</h2></div>
+          <table>
+            <thead><tr><th>الوقت</th><th>المستخدم</th><th>العملية</th><th>الكيان</th><th>المعرّف</th></tr></thead>
+            <tbody>${state.auditLogs.slice(0, 50).map(a => `<tr><td>${(a.CreatedAt || '').slice(0,16)}</td><td>#${a.UserId}</td><td>${a.ActionType}</td><td>${a.EntityName}</td><td>${a.EntityId || ''}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function createPeriodApi() {
+      await fetch('/api/fiscal-periods', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          periodName: document.getElementById('fpName').value.trim(),
+          startDate: document.getElementById('fpStart').value,
+          endDate: document.getElementById('fpEnd').value,
+          actorId: state.user.id
+        })
+      });
+      openAdminSection('periods');
+    }
+
+    async function togglePeriodApi(id) {
+      await fetch(`/api/fiscal-periods/${id}/toggle`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actorId: state.user.id })
+      });
+      openAdminSection('periods');
+    }
+
+    function renderSettingsSection(main) {
+      const canB = hasPerm('backup_manage');
+      main.innerHTML = `
+        <div class="panel">
+          <div class="panel-head"><h2>إعدادات المنشأة والميزان والصلاحية</h2></div>
+          <div class="grid-3">
+            <div class="field"><label>اسم النظام / السوبر ماركت</label><input id="setName" type="text" value="${state.settings.company_name || 'نظام ركاز'}" /></div>
+            <div class="field"><label>بادئة باركود الميزان</label><input id="setScale" type="text" value="${state.settings.scale_prefix || '20'}" /></div>
+            <div class="field"><label>تنبيه الصلاحية قبل (أيام)</label><input id="setExpDays" type="number" value="${state.settings.expiry_alert_days || '7'}" /></div>
+          </div>
+          <div class="field"><label>تذييل الفاتورة</label><input id="setFooter" type="text" value="${state.settings.receipt_footer || ''}" /></div>
+          <button class="btn btn-navy" ${!canB ? 'disabled' : ''} onclick="saveSettingsApi()">حفظ الإعدادات</button>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>النسخ الاحتياطي والاستعادة</h2><button class="btn btn-gold btn-sm" ${!canB ? 'disabled' : ''} onclick="runBackupApi()">نسخة احتياطية الآن</button></div>
+          <table>
+            <thead><tr><th>الملف</th><th>التاريخ</th><th>استعادة</th></tr></thead>
+            <tbody>${state.backups.map(b => `<tr><td>${b.fileName}</td><td>${(b.createdAt || '').slice(0,19)}</td><td><button class="btn btn-warn btn-sm" ${!canB ? 'disabled' : ''} onclick="restoreBackupApi('${b.fileName}')">استعادة</button></td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function saveSettingsApi() {
+      await fetch('/api/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          actorId: state.user.id,
+          settings: {
+            company_name: document.getElementById('setName').value.trim(),
+            scale_prefix: document.getElementById('setScale').value.trim() || '20',
+            expiry_alert_days: document.getElementById('setExpDays').value.trim() || '7',
+            receipt_footer: document.getElementById('setFooter').value.trim()
+          }
+        })
+      });
+      await loadAllData();
+      alert('تم حفظ الإعدادات.');
+    }
+
+    async function runBackupApi() {
+      const res = await fetch('/api/backup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ actorId: state.user.id }) });
+      const data = await res.json();
+      if (data.ok) { alert('تم إنشاء النسخة الاحتياطية: ' + data.fileName); openAdminSection('settings'); }
+    }
+
+    async function restoreBackupApi(fileName) {
+      if (!confirm('استعادة هذه النسخة الاحتياطية؟')) return;
+      const res = await fetch('/api/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName, actorId: state.user.id }) });
+      const data = await res.json();
+      alert(data.message || 'تمت العملية');
+      openAdminSection('settings');
+    }
+
+    function openModal(title, html) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalBody').innerHTML = html;
+      document.getElementById('modalBackdrop').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('modalBackdrop').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
